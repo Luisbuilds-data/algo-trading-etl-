@@ -3,7 +3,6 @@
 
 import hashlib
 import json
-import os
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 
@@ -14,12 +13,8 @@ from psycopg2.extras import execute_values
 from prefect import flow, task, get_run_logger
 
 DB_DSN = "dbname=trading_db"  # peer auth as ubuntu via Unix socket
-S3_BUCKET = "<your-s3-bucket>"
+S3_BUCKET = "cle-portfolio-etl"
 S3_REGION = "us-west-1"
-
-TRADES_DIR        = os.getenv("TRADES_DIR", ".")
-WAZUH_ALERTS_FILE = os.getenv("WAZUH_ALERTS", "./wazuh_alerts.json")
-EXPORTS_DIR       = os.getenv("EXPORTS_DIR", "./exports")
 
 SHARED_COLS = [
     "trade_id", "symbol", "side", "outcome", "reason",
@@ -29,10 +24,11 @@ SHARED_COLS = [
 ]
 
 SOURCES = [
-    (os.path.join(TRADES_DIR, "reversion_trades_mixed.csv"), "oanda"),
-    (os.path.join(TRADES_DIR, "trades_v65_month1.csv"), "kraken"),
+    ("/home/ubuntu/reversion_trades_mixed.csv", "oanda"),
+    ("/home/ubuntu/trades_v65_month1.csv", "kraken"),
 ]
 
+WAZUH_ALERTS_FILE = "/home/ubuntu/etl/wazuh_alerts.json"
 
 
 # ── Trades tasks ─────────────────────────────────────────────────────────────
@@ -147,7 +143,7 @@ def load_postgres(df: pd.DataFrame) -> pd.DataFrame:
 @task
 def export_parquet(df: pd.DataFrame, prefix: str = "trades") -> str:
     logger = get_run_logger()
-    export_dir = Path(EXPORTS_DIR)
+    export_dir = Path("/home/ubuntu/etl/exports")
     export_dir.mkdir(parents=True, exist_ok=True)
     path = export_dir / f"{prefix}_{date.today().isoformat()}.parquet"
     df.to_parquet(path, index=False)
@@ -289,16 +285,17 @@ def load_wazuh_alerts(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-# ── Flow ──────────────────────────────────────────────────────────────────────
-
+# ── Benchmark task ────────────────────────────────────────────────────────────
 
 @task(name="fetch_benchmark_prices")
-def fetch_benchmark_prices():
+def fetch_benchmark_prices() -> pd.DataFrame:
     import yfinance as yf
     from datetime import date, timedelta
+    logger = get_run_logger()
     start = date(2026, 4, 1)
     end   = date.today() + timedelta(days=1)
     inserted = 0
+    records = []
     with psycopg2.connect(DB_DSN) as conn:
         with conn.cursor() as cur:
             for symbol in ["BTC-USD", "ETH-USD"]:
@@ -314,9 +311,103 @@ def fetch_benchmark_prices():
                         (idx.date(), symbol, close)
                     )
                     inserted += cur.rowcount
+                    records.append({"date": idx.date(), "symbol": symbol, "close_price": close})
         conn.commit()
     logger.info(f"Benchmark prices upserted: {inserted} rows")
-    return inserted
+    return pd.DataFrame(records)
+
+
+# ── Iceberg task ──────────────────────────────────────────────────────────────
+
+@task(name="write_iceberg_tables")
+def write_iceberg_tables(
+    trades: pd.DataFrame,
+    alerts: pd.DataFrame,
+    benchmark: pd.DataFrame,
+) -> None:
+    import pyarrow as pa
+    from pyiceberg.catalog.glue import GlueCatalog
+    from pyiceberg.exceptions import NoSuchTableError
+    from pyiceberg.io.pyarrow import pyarrow_to_schema
+    from pyiceberg.partitioning import PartitionSpec, PartitionField
+    from pyiceberg.transforms import DayTransform
+
+    logger = get_run_logger()
+
+    catalog = GlueCatalog(
+        "trading_lakehouse",
+        **{
+            "warehouse": "s3://cle-portfolio-etl/iceberg",
+            "region_name": "us-west-1",
+        },
+    )
+
+    NAMESPACE = "trading_lakehouse"
+
+    def _load_or_create(name, arrow_tbl, partition_col):
+        identifier = (NAMESPACE, name)
+        location = f"s3://cle-portfolio-etl/iceberg/{name}"
+        try:
+            return catalog.load_table(identifier)
+        except NoSuchTableError:
+            iceberg_schema = pyarrow_to_schema(arrow_tbl.schema)
+            field = iceberg_schema.find_field(partition_col)
+            spec = PartitionSpec(
+                PartitionField(
+                    source_id=field.field_id,
+                    field_id=1000,
+                    transform=DayTransform(),
+                    name=f"{partition_col}_day",
+                )
+            )
+            return catalog.create_table(
+                identifier,
+                schema=iceberg_schema,
+                location=location,
+                partition_spec=spec,
+            )
+
+    # ── trades ────────────────────────────────────────────────────────────────
+    if not trades.empty:
+        t = trades.copy()
+        # Serialize indicator dicts to JSON strings (PyArrow can't infer mixed-key maps)
+        t["indicators"] = t["indicators"].apply(
+            lambda x: json.dumps(x) if isinstance(x, dict) else str(x or "{}")
+        )
+        t["entry_ts"] = pd.to_datetime(t["entry_ts"], utc=True)
+        t["exit_ts"] = pd.to_datetime(t["exit_ts"], utc=True)
+        arrow_tbl = pa.Table.from_pandas(t, preserve_index=False)
+        tbl = _load_or_create("trades", arrow_tbl, "entry_ts")
+        tbl.append(arrow_tbl)
+        logger.info(f"Iceberg trades: appended {len(t)} rows")
+    else:
+        logger.info("Iceberg trades: no rows to append")
+
+    # ── wazuh_alerts ──────────────────────────────────────────────────────────
+    if not alerts.empty:
+        a = alerts.copy()
+        a["timestamp"] = pd.to_datetime(a["timestamp"], utc=True)
+        arrow_tbl = pa.Table.from_pandas(a, preserve_index=False)
+        tbl = _load_or_create("wazuh_alerts", arrow_tbl, "timestamp")
+        tbl.append(arrow_tbl)
+        logger.info(f"Iceberg wazuh_alerts: appended {len(a)} rows")
+    else:
+        logger.info("Iceberg wazuh_alerts: no rows to append")
+
+    # ── benchmark_prices ──────────────────────────────────────────────────────
+    if not benchmark.empty:
+        b = benchmark.copy()
+        # Ensure date column is a proper date type for PyArrow
+        b["date"] = pd.to_datetime(b["date"]).dt.date
+        arrow_tbl = pa.Table.from_pandas(b, preserve_index=False)
+        tbl = _load_or_create("benchmark_prices", arrow_tbl, "date")
+        tbl.append(arrow_tbl)
+        logger.info(f"Iceberg benchmark_prices: appended {len(b)} rows")
+    else:
+        logger.info("Iceberg benchmark_prices: no rows to append")
+
+
+# ── Flow ──────────────────────────────────────────────────────────────────────
 
 @flow(name="daily_trades_etl")
 def daily_trades_etl():
@@ -335,7 +426,10 @@ def daily_trades_etl():
         upload_s3(wazuh_parquet, s3_prefix="raw/wazuh")
 
     # Benchmark prices
-    fetch_benchmark_prices()
+    benchmark = fetch_benchmark_prices()
+
+    # Iceberg tables (additive — Postgres load path unchanged above)
+    write_iceberg_tables(clean, alerts, benchmark)
 
 
 if __name__ == "__main__":

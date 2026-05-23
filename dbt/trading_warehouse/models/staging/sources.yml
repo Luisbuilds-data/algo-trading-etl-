@@ -7,3 +7,17 @@ sources:
       - name: trades
       - name: wazuh_alerts
       - name: benchmark_prices
+
+  - name: lakehouse
+    database: trading_lakehouse
+    schema: trading_lakehouse
+    tables:
+      - name: trades
+        meta:
+          s3_path: s3://cle-portfolio-etl/iceberg/trades/
+      - name: wazuh_alerts
+        meta:
+          s3_path: s3://cle-portfolio-etl/iceberg/wazuh_alerts/
+      - name: benchmark_prices
+        meta:
+          s3_path: s3://cle-portfolio-etl/iceberg/benchmark_prices/
