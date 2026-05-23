@@ -1,0 +1,14 @@
+[Unit]
+Description=Iceberg Maintenance — expire snapshots and rewrite data files
+After=network.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+WorkingDirectory=/home/ubuntu/etl
+ExecStart=/home/ubuntu/etl/venv/bin/python /home/ubuntu/etl/iceberg_maintenance.py
+StandardOutput=append:/home/ubuntu/iceberg-maintenance.log
+StandardError=append:/home/ubuntu/iceberg-maintenance.log
+
+[Install]
+WantedBy=multi-user.target

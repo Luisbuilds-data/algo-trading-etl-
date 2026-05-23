@@ -24,3 +24,6 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+vars:
+  snapshot_id_trades: 5500335959567865679

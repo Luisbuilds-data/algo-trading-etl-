@@ -1,0 +1,9 @@
+[Unit]
+Description=Weekly Iceberg maintenance timer
+
+[Timer]
+OnCalendar=Sun 03:30 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target
