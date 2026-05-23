@@ -1,3 +1,4 @@
+import os
 #!/usr/bin/env python3
 """daily_trades_etl.py - Prefect ETL pipeline for trading + Wazuh data."""
 
@@ -14,7 +15,7 @@ from prefect import flow, task, get_run_logger
 from prefect.artifacts import create_markdown_artifact
 
 DB_DSN = "dbname=trading_db"  # peer auth as ubuntu via Unix socket
-S3_BUCKET = "cle-portfolio-etl"
+S3_BUCKET = os.getenv("S3_BUCKET", "cle-portfolio-etl")
 S3_REGION = "us-west-1"
 
 SHARED_COLS = [

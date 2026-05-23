@@ -25,3 +25,9 @@ lakehouse.duckdb
 # Great Expectations runtime
 gx/
 etl/gx/row_count_baseline.json
+progress.md
+docs/screenshots/
+*.key
+*.pem
+.dbt/
+.aws/
