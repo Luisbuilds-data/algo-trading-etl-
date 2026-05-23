@@ -54,7 +54,7 @@ Le dashboard Metabase "Trading Bot Performance & Security Operations" inclut :
 
 1. **Upserts idempotents** — contrainte UNIQUE sur `(trade_id, source)` permet de relancer le pipeline sans doublons, même si les CSVs se chevauchent
 2. **Schéma unifié multi-bot** — OANDA et Kraken ont des colonnes d'indicateurs différentes ; colonnes communes en colonnes dédiées, indicateurs spécifiques en JSONB
-3. **Transit sécurisé des alertes** — rsync chiffré via WireGuard VPN entre Wazuh EC2 (10.66.66.3) et Hub EC2 (10.66.66.1), aucun port exposé à internet
+3. **Transit sécurisé des alertes** — rsync chiffré via WireGuard VPN entre le serveur IDS et le Hub EC2, aucun port exposé à internet
 4. **Jointure cross-domaine** — fenêtre temporelle ±30 min entre `entry_ts` des trades et `timestamp` des alertes Wazuh, sans clé de jointure directe
 
 ## Stack technique
