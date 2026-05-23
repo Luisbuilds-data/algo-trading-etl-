@@ -1,0 +1,23 @@
+# Environment & secrets
+*.env
+.env*
+*password*
+*secret*
+*credential*
+
+# Python
+*.pyc
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+
+# Data files
+*.parquet
+exports/
+*.log
+*.csv
+
+# OS
+.DS_Store
+Thumbs.db
