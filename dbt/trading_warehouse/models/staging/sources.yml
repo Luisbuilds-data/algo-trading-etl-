@@ -9,15 +9,14 @@ sources:
       - name: benchmark_prices
 
   - name: lakehouse
-    database: trading_lakehouse
-    schema: trading_lakehouse
+    schema: main
     tables:
       - name: trades
         meta:
-          s3_path: s3://cle-portfolio-etl/iceberg/trades/
+          external_location: "iceberg_scan('s3://cle-portfolio-etl/iceberg/trades/metadata/current.metadata.json')"
       - name: wazuh_alerts
         meta:
-          s3_path: s3://cle-portfolio-etl/iceberg/wazuh_alerts/
+          external_location: "iceberg_scan('s3://cle-portfolio-etl/iceberg/wazuh_alerts/metadata/current.metadata.json')"
       - name: benchmark_prices
         meta:
-          s3_path: s3://cle-portfolio-etl/iceberg/benchmark_prices/
+          external_location: "iceberg_scan('s3://cle-portfolio-etl/iceberg/benchmark_prices/metadata/current.metadata.json')"
