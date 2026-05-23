@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    tables:
+      - name: trades
+      - name: wazuh_alerts
+      - name: benchmark_prices

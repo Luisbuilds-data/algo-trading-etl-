@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: fct_trades
+    columns:
+      - name: id
+        tests:
+          - unique
+          - not_null
+      - name: trade_id
+        tests:
+          - not_null
+      - name: side
+        tests:
+          - accepted_values:
+              values: ['BUY', 'SELL']
+      - name: pnl_usd
+        tests:
+          - not_null
+
+  - name: fct_alerts
+    columns:
+      - name: alert_id
+        tests:
+          - not_null
+          - unique
+
+  - name: dim_date
+    columns:
+      - name: date_day
+        tests:
+          - unique
+          - not_null
