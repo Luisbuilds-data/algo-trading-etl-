@@ -23,7 +23,7 @@ graph LR
     D[Wazuh IDSAlertes JSON] -->|rsync 15minWireGuard VPN| C
     E[yfinanceBTC/ETH prix] --> C
     C --> F[(PostgreSQLraw schema)]
-    C --> G[S3 Parquetcle-portfolio-etl]
+    C --> G[S3 Parquet<your-s3-bucket>]
     F --> H[marts schema7 vues analytiques]
     H --> I[MetabaseDashboard]
 ```
@@ -46,7 +46,7 @@ Le dashboard Metabase "Trading Bot Performance & Security Operations" inclut :
 - **Pipeline ETL fiable** — Prefect flow avec validation, upserts idempotents, gestion d'erreurs et retry automatique
 - **Double source de données** — trades OANDA (Forex) + Kraken (Crypto) normalisés dans un schéma unifié avec indicateurs techniques en JSONB
 - **Entrepôt dimensionnel** — 7 vues `marts` couvrant performance trading, métriques de sécurité et benchmark marché
-- **Backup S3 automatique** — exports Parquet quotidiens vers `s3://cle-portfolio-etl/`
+- **Backup S3 automatique** — exports Parquet quotidiens vers `s3://<your-s3-bucket>/`
 - **Qualité des données** — validation à l'extraction : timestamps, nulls, types numériques — lignes invalides journalisées sans bloquer le flow
 - **Benchmark de performance** — courbe d'équité du bot vs BTC/ETH buy-and-hold (données yfinance) — infrastructure prête, s'activera à pleine taille de position en trading live
 

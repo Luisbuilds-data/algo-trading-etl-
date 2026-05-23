@@ -13,7 +13,7 @@ from psycopg2.extras import execute_values
 from prefect import flow, task, get_run_logger
 
 DB_DSN = "dbname=trading_db"  # peer auth as ubuntu via Unix socket
-S3_BUCKET = "cle-portfolio-etl"
+S3_BUCKET = "<your-s3-bucket>"
 S3_REGION = "us-west-1"
 
 SHARED_COLS = [
