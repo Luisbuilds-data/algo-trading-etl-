@@ -11,14 +11,17 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-
 # Data files
 *.parquet
 exports/
 *.log
 *.csv
-
 # OS
 .DS_Store
 Thumbs.db
 lakehouse.duckdb
+# DuckDB
+*.duckdb
+# Great Expectations runtime
+gx/
+etl/gx/row_count_baseline.json
