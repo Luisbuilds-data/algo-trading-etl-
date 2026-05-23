@@ -3,6 +3,7 @@
 
 import hashlib
 import json
+import os
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 
@@ -16,6 +17,10 @@ DB_DSN = "dbname=trading_db"  # peer auth as ubuntu via Unix socket
 S3_BUCKET = "<your-s3-bucket>"
 S3_REGION = "us-west-1"
 
+TRADES_DIR        = os.getenv("TRADES_DIR", ".")
+WAZUH_ALERTS_FILE = os.getenv("WAZUH_ALERTS", "./wazuh_alerts.json")
+EXPORTS_DIR       = os.getenv("EXPORTS_DIR", "./exports")
+
 SHARED_COLS = [
     "trade_id", "symbol", "side", "outcome", "reason",
     "entry_ts", "exit_ts", "hour_utc",
@@ -24,11 +29,10 @@ SHARED_COLS = [
 ]
 
 SOURCES = [
-    ("/home/ubuntu/reversion_trades_mixed.csv", "oanda"),
-    ("/home/ubuntu/trades_v65_month1.csv", "kraken"),
+    (os.path.join(TRADES_DIR, "reversion_trades_mixed.csv"), "oanda"),
+    (os.path.join(TRADES_DIR, "trades_v65_month1.csv"), "kraken"),
 ]
 
-WAZUH_ALERTS_FILE = "/home/ubuntu/etl/wazuh_alerts.json"
 
 
 # ── Trades tasks ─────────────────────────────────────────────────────────────
@@ -143,7 +147,7 @@ def load_postgres(df: pd.DataFrame) -> pd.DataFrame:
 @task
 def export_parquet(df: pd.DataFrame, prefix: str = "trades") -> str:
     logger = get_run_logger()
-    export_dir = Path("/home/ubuntu/etl/exports")
+    export_dir = Path(EXPORTS_DIR)
     export_dir.mkdir(parents=True, exist_ok=True)
     path = export_dir / f"{prefix}_{date.today().isoformat()}.parquet"
     df.to_parquet(path, index=False)

@@ -14,7 +14,7 @@
 │  │       ├── raw.benchmark_prices          │
 │  │       └── marts.*  (7 views)            │
 │  ├── Metabase (Docker) :3000               │
-│  ├── PromptTemplate.ca (PM2 + Nginx)       │
+│  ├── Web Application (PM2 + Nginx)       │
 │  └── Prefect ETL  (systemd daily timer)    │
 │                                             │
 │  Wazuh EC2 (<wireguard-ip>)                    │
