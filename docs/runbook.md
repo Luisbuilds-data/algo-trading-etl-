@@ -52,11 +52,11 @@ psql -d trading_db -c "SELECT COUNT(*) FROM raw.trades;"
 
 ```bash
 # Lister le bucket
-aws s3 ls s3://cle-portfolio-etl/raw/trades/ --region us-west-1
+aws s3 ls s3://<your-s3-bucket>/raw/trades/ --region us-west-1
 
 # Test d'upload
-echo "test" | aws s3 cp - s3://cle-portfolio-etl/test.txt --region us-west-1
-aws s3 rm s3://cle-portfolio-etl/test.txt --region us-west-1
+echo "test" | aws s3 cp - s3://<your-s3-bucket>/test.txt --region us-west-1
+aws s3 rm s3://<your-s3-bucket>/test.txt --region us-west-1
 ```
 
 **Erreur courante :** `Unable to locate credentials`
@@ -71,7 +71,7 @@ aws s3 rm s3://cle-portfolio-etl/test.txt --region us-west-1
 ls -la /home/ubuntu/etl/wazuh_alerts.json
 stat /home/ubuntu/etl/wazuh_alerts.json | grep Modify
 
-# Sur Wazuh EC2 (10.66.66.3) : vérifier le timer rsync
+# Sur Wazuh EC2 (<wireguard-ip>) : vérifier le timer rsync
 systemctl status wazuh-rsync.timer
 journalctl -u wazuh-rsync.service -n 20 --no-pager
 ```
@@ -113,7 +113,7 @@ python /home/ubuntu/etl/etl_pipeline.py
 
 ## Contacts et ressources
 
-- **Hub EC2** : `i-0daa27a77ea6c24b0` (us-west-1) — accès via AWS SSM
-- **Wazuh EC2** : `i-0ac7c3966a1530557` (10.66.66.3) — accès via WireGuard + SSH
+- **Hub EC2** : `<ec2-instance-id>` (us-west-1) — accès via AWS SSM
+- **Wazuh EC2** : `<ec2-instance-id>` (<wireguard-ip>) — accès via WireGuard + SSH
 - **Logs ETL** : `journalctl -u etl-pipeline.service`
-- **Dashboard Metabase** : `http://10.66.66.1:3000/dashboard/2`
+- **Dashboard Metabase** : `http://<wireguard-ip>:3000/dashboard/2`

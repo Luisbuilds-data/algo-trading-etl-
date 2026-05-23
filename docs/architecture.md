@@ -4,9 +4,9 @@
 
 ```
 ┌─────────────────────────────────────────────┐
-│  WireGuard VPN  (10.66.66.0/24)             │
+│  WireGuard VPN  (<wireguard-ip>/24)             │
 │                                             │
-│  Hub EC2 (10.66.66.1 / 54.193.109.101)     │
+│  Hub EC2 (<wireguard-ip> / <ec2-public-ip>)     │
 │  ├── PostgreSQL 16  :5432                   │
 │  │   └── trading_db                        │
 │  │       ├── raw.trades                    │
@@ -17,14 +17,14 @@
 │  ├── PromptTemplate.ca (PM2 + Nginx)       │
 │  └── Prefect ETL  (systemd daily timer)    │
 │                                             │
-│  Wazuh EC2 (10.66.66.3)                    │
+│  Wazuh EC2 (<wireguard-ip>)                    │
 │  ├── Wazuh Manager + Dashboard             │
 │  └── rsync → Hub EC2 every 15 min          │
 └─────────────────────────────────────────────┘
                   │
             AWS S3 (us-west-1)
-            ├── cle-portfolio-etl/raw/trades/
-            └── cle-portfolio-etl/raw/wazuh/
+            ├── <your-s3-bucket>/raw/trades/
+            └── <your-s3-bucket>/raw/wazuh/
 ```
 
 ## ETL Flow (daily at 06:00 UTC)
