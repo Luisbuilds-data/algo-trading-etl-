@@ -1,0 +1,14 @@
+trading_warehouse:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      # Unix socket path for peer auth (e.g. /var/run/postgresql)
+      # or a TCP host (e.g. localhost, 10.x.x.x)
+      host: <pg-socket-or-host>
+      port: 5432
+      user: <pg-username>
+      password: <pg-password-or-empty-for-peer-auth>
+      dbname: <database-name>
+      schema: public
+      threads: 4
