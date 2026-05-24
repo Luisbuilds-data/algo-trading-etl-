@@ -1,6 +1,6 @@
 {{ config(materialized='table', schema='marts') }}
 
-SELECT DISTINCT
+SELECT DISTINCT ON (rule_id)
     rule_id,
     rule_level,
     rule_description,
@@ -12,3 +12,4 @@ SELECT DISTINCT
     END AS severity_label
 FROM {{ ref('stg_wazuh_alerts') }}
 WHERE rule_id IS NOT NULL
+ORDER BY rule_id
