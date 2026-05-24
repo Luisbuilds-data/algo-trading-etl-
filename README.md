@@ -133,7 +133,7 @@ Voir [`docs/runbook.md`](docs/runbook.md) pour les procédures de diagnostic et 
 
 ## Roadmap
 
-- [ ] Enrichissement géo des IPs (MaxMind GeoLite2) → carte des sources d'attaque
+- [x] Enrichissement géo des IPs → carte des sources d'attaque ✓ (ip-api.com batch API — no MaxMind license required; enrichit raw.ip_geo → mart_attack_geo, 36 IPs résolus, 15+ pays)
 - [ ] Mapping MITRE ATT&CK des règles Wazuh
 - [ ] MTTD et temps de résolution des alertes
 - [ ] Tests unitaires pytest sur les transformations ETL
